@@ -145,6 +145,15 @@ void EndstopsManager::Init() noexcept
 	defaultZProbe = new DummyZProbe(0);			// we must always have a non-null current Z probe so we use this one if none is defined
 }
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	int32_t EndstopsManager::GetAxisMapped(size_t axis) const
+	{
+		return (axis < MaxAxes && axisEndstops[axis] != nullptr && axisEndstops[axis]->GetNumberOfIndividualPorts() > 0)
+				? (int32_t)axis : -1;
+	}
+#endif
+
+
 // Return a pointer to an endstop. Caller must already own a read lock on endstopsLock.
 // We don't lock endstopsLock because if we already own a read lock and someone else is requesting a write lock, when using 3.4.x version of ReadWriteLock we will deadlock (fixed in 3.5).
 const Endstop *_ecv_from _ecv_null EndstopsManager::FindEndstopWhenLockOwned(size_t axis) const noexcept

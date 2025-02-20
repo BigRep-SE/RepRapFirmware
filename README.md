@@ -5,3 +5,7 @@ All documentation has been moved to the [RepRapFirmware GitHub Wiki](https://git
 
 # Licence
 The source files in this project (RepRapFirmware) are licensed under GPLv3, see http://www.gnu.org/licenses/gpl-3.0.en.html. The associated CoreNG project, which provides a partial hardware abstraction layer, includes files derived from the Advanced Software Framework (formerly Atmel Software Framework) from Microchip. Those files have a more restrictive license, in particular they may only be used for code that targets Atmel/Microchip processors.
+
+## Bug reports
+
+Please use the [forum](https://forum.duet3d.com) for support requests or the [issues](https://github.com/Duet3D/RepRapFirmware/issues) page for feature requests and bug reports.

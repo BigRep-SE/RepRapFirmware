@@ -21,6 +21,7 @@ namespace TaskPriority
 	constexpr unsigned int MovePriority = 4;
 	constexpr unsigned int TmcPriority = 4;
 	constexpr unsigned int AinPriority = 4;
+	constexpr unsigned int NetXPriority = 4;
 	constexpr unsigned int HeightFollowingPriority = 4;
 #ifdef DUET_NG
 	constexpr unsigned int DueXPriority = 5;
@@ -31,7 +32,11 @@ namespace TaskPriority
 	constexpr unsigned int LaserPriority = 5;
 	constexpr unsigned int CanSenderPriority = 5;
 	constexpr unsigned int EthernetPriority = 5;
+	constexpr unsigned int NetXSocketPriority = 5;
 	constexpr unsigned int CanReceiverPriority = 6;
+#if SUPPORT_POWERMETER || SUPPORT_EMUPOWERMETER
+	constexpr unsigned int PowerMeterPriority = 6;
+#endif
 	constexpr unsigned int Accelerometer = 6;
 	constexpr unsigned int CanClockPriority = 7;
 

@@ -112,10 +112,21 @@ public:
 	bool GetAtHighEnd() const noexcept { return atHighEnd; }
 	void SetAtHighEnd(bool b) noexcept { atHighEnd = b; }
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	size_t GetNumberOfIndividualPorts() const { return numPortsUsed; };
+#endif
+
 protected:
 	Endstop(uint8_t p_axis, EndStopPosition pos) noexcept;
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	size_t numPortsUsed = 0 ;
+	virtual bool GetStatusOfIndividualPort(size_t idx) const { return false; };
+
+	DECLARE_OBJECT_MODEL_WITH_ARRAYS
+#else
 	DECLARE_OBJECT_MODEL
+#endif
 
 private:
 	bool atHighEnd;										// whether this endstop is at the max (true) or the min (false)

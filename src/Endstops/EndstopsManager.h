@@ -81,6 +81,10 @@ public:
 	bool WriteZProbeParameters(FileStore *f, bool includingG31) const noexcept;
 #endif
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	int32_t GetAxisMapped(size_t axis) const ;
+#endif
+
 protected:
 	DECLARE_OBJECT_MODEL_WITH_ARRAYS
 

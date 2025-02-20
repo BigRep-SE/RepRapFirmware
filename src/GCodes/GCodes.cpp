@@ -49,6 +49,10 @@
 # include <CAN/CanInterface.h>
 #endif
 
+#if SUPPORT_MACHINE_VERSION
+# include <Hardware/NonVolatileMemory.h>
+#endif
+
 #if HAS_AUX_DEVICES
 // Support for emergency stop from PanelDue
 bool GCodes::emergencyStopCommanded = false;
@@ -5273,6 +5277,19 @@ const char *_ecv_array GCodes::GetMachineModeString() const noexcept
 		return "Unknown";
 	}
 }
+
+#if SUPPORT_MACHINE_VERSION
+uint16_t GCodes::GetMachineVersion() const noexcept {
+	NonVolatileMemory mem;
+	return mem.GetMachineVersion();
+}
+
+void GCodes::SetMachineVersion(const uint16_t machineVersion) noexcept {
+	NonVolatileMemory mem;
+	mem.SetMachineVersion(machineVersion);
+	mem.EnsureWritten();
+}
+#endif
 
 // Return a current extrusion factor as a fraction
 float GCodes::GetExtrusionFactor(size_t extruder) noexcept

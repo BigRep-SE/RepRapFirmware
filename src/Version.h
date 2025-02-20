@@ -9,14 +9,20 @@
 #define SRC_VERSION_H_
 
 #ifndef VERSION
+#ifndef VERSIONTAG
 // Note: the complete VERSION string must be in standard version number format and must not contain spaces! This is so that DWC can parse it.
-# define MAIN_VERSION	"3.6.0-beta.3"
+# define MAIN_VERSION	"3.6.LOC"
 # ifdef USE_CAN0
 #  define VERSION_SUFFIX	"(CAN0)"
 # else
 #  define VERSION_SUFFIX	""
 # endif
 # define VERSION MAIN_VERSION VERSION_SUFFIX
+#else
+# define VERSION_STR(x) #x
+# define VERSION_TO_STR(x) VERSION_STR(x)
+# define VERSION VERSION_TO_STR(VERSIONTAG)
+#endif
 #endif
 
 extern const char *const DATE;

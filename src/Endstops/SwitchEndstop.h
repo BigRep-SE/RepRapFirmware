@@ -32,7 +32,11 @@ public:
 #endif
 
 	GCodeResult Configure(GCodeBuffer& gb, const StringRef& reply) THROWS(GCodeException);
-	GCodeResult Configure(const char *_ecv_array pinNames, const StringRef& reply) noexcept;
+	GCodeResult Configure(const char *_ecv_array pinNames, const StringRef& reply, uint16_t threshold = 0) noexcept;
+
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	bool GetStatusOfIndividualPort(size_t idx) const override;
+#endif
 
 private:
 	typedef Bitmap<uint16_t> PortsBitmap;
@@ -57,7 +61,9 @@ private:
 	CanAddress boardNumbers[MaxDriversPerAxis];
 	bool states[MaxDriversPerAxis];
 #endif
+#if !SUPPORT_INDIVIDUAL_ENDSTOPS // numPortsUsed is now part of Endstop class.
 	size_t numPortsUsed;
+#endif
 	PortsBitmap portsLeftToTrigger;
 	size_t numPortsLeftToTrigger;
 	bool stopAll;

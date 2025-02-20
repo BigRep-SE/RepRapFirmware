@@ -16,6 +16,7 @@
 # include <Platform/TaskPriorities.h>
 #endif
 
+#if !defined(XBOARD_V2) && !defined(XBOARD_V3)
 AsyncSerial serialUart1(UART2, UART2_IRQn, ID_UART2, 512, 512,
 					[](AsyncSerial*) noexcept
 					{
@@ -74,6 +75,48 @@ void UART4_Handler(void) noexcept
 }
 #endif
 
+#else
+AsyncSerial serialUart1(UART0, UART0_IRQn, ID_UART0, 512, 512,
+					[](AsyncSerial*) noexcept
+					{
+						SetPinFunction(APIN_Serial0_RXD, Serial0PinFunction);
+						SetPinFunction(APIN_Serial0_TXD, Serial0PinFunction);
+					},
+					[](AsyncSerial*) noexcept
+					{
+						ClearPinFunction(APIN_Serial0_RXD);
+						ClearPinFunction(APIN_Serial0_TXD);
+					}
+				);
+#ifdef SERIAL_RS485_SELECT
+AsyncSerial485 serialUart2(UART4, SERIAL_RS485_SELECT, UART4_IRQn, ID_UART4, 512, 512,
+					[](AsyncSerial*) noexcept
+					{
+						SetPinFunction(APIN_Serial1_RXD, Serial1PinFunction);
+						SetPinFunction(APIN_Serial1_TXD, Serial1PinFunction);
+					},
+					[](AsyncSerial*) noexcept
+					{
+						ClearPinFunction(APIN_Serial1_RXD);
+						ClearPinFunction(APIN_Serial1_TXD);
+					}
+				);
+#endif
+
+void UART0_Handler(void) noexcept
+{
+	serialUart1.IrqHandler();
+}
+
+#ifdef SERIAL_RS485_SELECT
+void UART4_Handler(void) noexcept
+{
+	serialUart2.IrqHandler();
+}
+#endif
+#endif
+
+
 void SdhcInit() noexcept
 {
 	SetPinFunction(HsmciMclkPin, HsmciMclkPinFunction);
@@ -119,6 +162,8 @@ void DeviceInit() noexcept
 	// Set up PB4..PB7 as normal I/O, not JTAG or SWD
 	matrix_set_system_io(CCFG_SYSIO_SYSIO4 | CCFG_SYSIO_SYSIO5 | CCFG_SYSIO_SYSIO6 | CCFG_SYSIO_SYSIO7);
 # endif
+#elif defined(XBOARD_V3)
+	matrix_set_system_io(CCFG_SYSIO_SYSIO4 | CCFG_SYSIO_SYSIO5);
 #endif
 
 #if CORE_USES_TINYUSB

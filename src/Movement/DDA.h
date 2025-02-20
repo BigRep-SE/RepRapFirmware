@@ -171,6 +171,11 @@ public:
 	static uint32_t stepsRequested[NumDirectDrivers], stepsDone[NumDirectDrivers];
 #endif
 
+#ifdef SUPPORT_EMULATOR
+	static uint32_t extrusionStepsDone[NumDirectDrivers];
+	static uint32_t retractionStepsDone[NumDirectDrivers];
+#endif
+
 private:
 	static constexpr float MinimumAccelOrDecelClocks = 10.0;				// Minimum number of acceleration or deceleration clocks we try to ensure
 

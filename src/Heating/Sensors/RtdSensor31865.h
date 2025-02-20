@@ -9,6 +9,7 @@
 #define SRC_HEATING_RTDSENSOR31865_H_
 
 #include "SpiTemperatureSensor.h"
+#include <Platform/Platform.h>
 
 #if SUPPORT_SPI_SENSORS
 
@@ -39,6 +40,17 @@ private:
 
 	uint32_t rrefTimes100;				// reference resistor in units of 0.01 ohms
 	uint8_t cr0;
+
+	// Filter
+	uint16_t UpdateFilter(uint16_t r, uint16_t s) noexcept;
+	uint32_t GetSamplesFromSeconds(uint32_t s) const noexcept;
+	uint32_t GetSecondsFromSamples(uint32_t s) const noexcept;
+
+	size_t index;
+	uint32_t windowSize;											// Current number of samples use in the average
+	uint32_t reqWindowSize;											// New size of the window requested by M308 K parameter
+	uint32_t sum;													// Sum of all the elements in the buffer
+	uint16_t readings[Pt100MaxAverageReadings];						// Filter buffer
 };
 
 #endif //SUPPORT_SPI_SENSORS

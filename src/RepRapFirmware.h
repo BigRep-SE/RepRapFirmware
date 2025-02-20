@@ -411,7 +411,7 @@ typedef double floatc_t;							// type of matrix element used for calibration
 typedef float floatc_t;								// type of matrix element used for calibration
 #endif
 
-#if SUPPORT_CAN_EXPANSION
+#if SUPPORT_CAN_EXPANSION || defined(SUPPORT_EMULATOR)
 
 # include <Duet3Common.h>
 

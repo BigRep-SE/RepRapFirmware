@@ -310,6 +310,7 @@ public:
 
 #if SUPPORT_ASYNC_MOVES
 	bool IsLaterThan(const GCodeBuffer& other) const noexcept;
+	bool IsLaterOrEqualThan(const GCodeBuffer& other) const noexcept;
 #endif
 
 	Mutex mutex;

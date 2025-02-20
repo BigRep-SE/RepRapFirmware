@@ -92,7 +92,15 @@ GCodeResult GpInputPort::Configure(uint32_t gpinNumber, GCodeBuffer &gb, const S
 		if (newBoard != CanInterface::GetCanAddress())
 		{
 			handle.Set(RemoteInputHandle::typeGpIn, gpinNumber, 0);
+#if SUPPORT_ANALOG_THRESHOLD
+			uint16_t threshold = 0;
+			if (gb.Seen('T')){
+				threshold = gb.GetUIValue();
+			}
+			rslt = CanInterface::CreateHandle(newBoard, handle, pinName.c_str(), threshold, MinimumGpinReportInterval, currentState, reply);
+#else
 			rslt = CanInterface::CreateHandle(newBoard, handle, pinName.c_str(), 0, MinimumGpinReportInterval, currentState, reply);
+#endif
 			if (rslt == GCodeResult::ok)
 			{
 				boardAddress = newBoard;

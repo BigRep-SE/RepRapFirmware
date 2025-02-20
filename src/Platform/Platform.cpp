@@ -94,6 +94,10 @@ static_assert(NumDmaChannelsUsed <= NumDmaChannelsSupported, "Need more DMA chan
 # include <CanMessageGenericTables.h>
 #endif
 
+#if SUPPORT_POWERMETER ||SUPPORT_EMUPOWERMETER
+#include "Hardware/PowerMeter/PowerMeter.h"
+#endif
+
 #if SUPPORT_REMOTE_COMMANDS
 # include <CanMessageGenericParser.h>
 #endif
@@ -215,6 +219,7 @@ constexpr ObjectModelTableEntry Platform::objectModelTable[] =
 #if SUPPORT_CAN_EXPANSION
 	{ "canAddress",			OBJECT_MODEL_FUNC_NOSELF((int32_t)CanInterface::GetCanAddress()),									ObjectModelEntryFlags::none },
 #endif
+	{ "canPorts",			OBJECT_MODEL_FUNC_NOSELF((int32_t)SUPPORT_CAN_EXPANSION+DUAL_CAN_FD),											ObjectModelEntryFlags::none },
 #if SUPPORT_DIRECT_LCD
 	{ "directDisplay",		OBJECT_MODEL_FUNC_IF_NOSELF(reprap.GetDisplay().IsPresent(), &reprap.GetDisplay()),					ObjectModelEntryFlags::none },
 #endif
@@ -287,7 +292,7 @@ constexpr ObjectModelTableEntry Platform::objectModelTable[] =
 constexpr uint8_t Platform::objectModelTableDescriptor[] =
 {
 	5,																		// number of sections
-	11 + SUPPORT_ACCELEROMETERS + HAS_SBC_INTERFACE + HAS_MASS_STORAGE + HAS_VOLTAGE_MONITOR + HAS_12V_MONITOR + HAS_CPU_TEMP_SENSOR
+	12 + SUPPORT_ACCELEROMETERS + HAS_SBC_INTERFACE + HAS_MASS_STORAGE + HAS_VOLTAGE_MONITOR + HAS_12V_MONITOR + HAS_CPU_TEMP_SENSOR
 	  + SUPPORT_CAN_EXPANSION + (int)SUPPORT_DIRECT_LCD + MCU_HAS_UNIQUE_ID + HAS_WIFI_NETWORKING,		// section 0: boards[0]
 #if HAS_CPU_TEMP_SENSOR
 	3,																		// section 1: mcuTemp
@@ -409,7 +414,7 @@ void Platform::Init() noexcept
 	pinMode(GlobalTmc2660EnablePin, OUTPUT_HIGH);
 #elif defined(DUET_M) || defined(DUET3MINI)
 	pinMode(GlobalTmc22xxEnablePin, OUTPUT_HIGH);
-#elif defined(DUET3_MB6HC)
+#elif defined(DUET3_MB6HC) || defined(XBOARD_V1) || defined(XBOARD_V3)
 	pinMode(GlobalTmc51xxEnablePin, OUTPUT_HIGH);
 #endif
 
@@ -463,7 +468,7 @@ void Platform::Init() noexcept
 	commsParams[1] = 1;							// by default we require a checksum on data from the aux port, to guard against overrun errors
 #endif
 
-#if defined(SERIAL_AUX2_DEVICE) && !defined(DUET3_ATE)
+#if defined(SERIAL_AUX2_DEVICE) && !defined(DUET3_ATE) && !SUPPORT_POWERMETER
     auxDevices[1].Init(&SERIAL_AUX2_DEVICE, AUX2_BAUD_RATE);
 	commsParams[2] = 0;
 #endif
@@ -647,6 +652,10 @@ void Platform::Init() noexcept
 	numV12UnderVoltageEvents = previousV12UnderVoltageEvents = 0;
 #endif
 
+#if SUPPORT_POWERMETER ||SUPPORT_EMUPOWERMETER
+	PowerMeter::ConfigurePowerMeter();
+#endif
+
 	// Kick everything off
 	InitialiseInterrupts();
 
@@ -813,6 +822,11 @@ void Platform::Spin() noexcept
 			digitalWrite(DiagPin, XNor(DiagOnPolarity, StepTimer::GetTimerTicks() & (1u << 17)) != 0);
 		}
 	}
+	else{
+		digitalWrite(DiagPin, XNor(DiagOnPolarity, StepTimer::GetMasterTime() & (1u << 19)) != 0);
+	}
+#else
+	digitalWrite(DiagPin, XNor(DiagOnPolarity, StepTimer::GetTimerTicks() & (1u << 19)) != 0);
 #endif
 
 #if SUPPORT_CAN_EXPANSION
@@ -3473,6 +3487,12 @@ void Platform::SetBoardType() noexcept
 	board = BoardType::DuetM_10;
 #elif defined(PCCB_10)
 	board = BoardType::PCCB_v10;
+#elif defined(XBOARD_V1)
+	board = BoardType::XBOARD_MA_01;
+#elif defined(XBOARD_V2)
+	board = BoardType::XBOARD_MA_02;
+#elif defined(XBOARD_V3)
+	board = BoardType::XBOARD_MA_03;
 #else
 # error Undefined board type
 #endif
@@ -3499,6 +3519,12 @@ const char *_ecv_array Platform::GetElectronicsString() const noexcept
 	case BoardType::Duet3_6XD_v102:			return "Duet 3 " BOARD_SHORT_NAME " v1.02 or later";
 #elif defined(FMDC_V02) || defined(FMDC_V03)
 	case BoardType::FMDC:					return "Duet 3 " BOARD_SHORT_NAME;
+#elif defined(XBOARD_V1)
+	case BoardType::XBOARD_MA_01:			return "BigRep XBoard " BOARD_SHORT_NAME;
+#elif defined(XBOARD_V2)
+	case BoardType::XBOARD_MA_02:			return "BigRep XBoard " BOARD_SHORT_NAME;
+#elif defined(XBOARD_V3)
+	case BoardType::XBOARD_MA_03:			return "BigRep XBoard " BOARD_SHORT_NAME;
 #elif defined(DUET_NG)
 	// This is the string that the Duet 2 ATE uses to identify the board. The version number must be at the end.
 	case BoardType::DuetWiFi_10:			return "Duet WiFi 1.0 or 1.01";
@@ -3539,6 +3565,12 @@ const char *_ecv_array Platform::GetBoardString() const noexcept
 	case BoardType::Duet3_6XD_v102:			return "duet3mb6xd102";
 #elif defined(FMDC_V02) || defined(FMDC_V03)
 	case BoardType::FMDC:					return "fmdc";
+#elif defined(XBOARD_V1)
+	case BoardType::XBOARD_MA_01:			return "bigrepcbma01";
+#elif defined(XBOARD_V2)
+	case BoardType::XBOARD_MA_02:			return "bigrepcbma02";
+#elif defined(XBOARD_V3)
+	case BoardType::XBOARD_MA_03:			return "bigrepcbma03";
 #elif defined(DUET_NG)
 	case BoardType::DuetWiFi_10:			return "duetwifi10";
 	case BoardType::DuetWiFi_102:			return "duetwifi102";
@@ -3800,6 +3832,30 @@ float Platform::GetCurrentV12Voltage() const noexcept
 #endif
 
 // Real-time clock
+const char* Platform::GetDateTimeAsString() const noexcept {
+	static String<30> strTimeWithMs;
+
+	if(IsDateTimeSet())
+	{
+		tm timeInfo;
+		GetDateTime(timeInfo);
+		const unsigned int millisToAppend = ( millis()-timeLastUpdatedMillis )%1000;
+		strTimeWithMs.printf(
+				"%04u-%02u-%02uT%02u:%02u:%02u.%03u",
+				timeInfo.tm_year + 1900,
+				timeInfo.tm_mon + 1,
+				timeInfo.tm_mday,
+				timeInfo.tm_hour,
+				timeInfo.tm_min,
+				timeInfo.tm_sec,
+					millisToAppend);
+	}
+	else
+	{
+		strTimeWithMs[0] = '\0';
+	}
+	return strTimeWithMs.c_str();
+}
 
 bool Platform::SetDateTime(time_t tim) noexcept
 {
@@ -3880,7 +3936,7 @@ GCodeResult Platform::ConfigurePort(GCodeBuffer& gb, const StringRef& reply) THR
 #endif
 
 	default:
-#if defined(DUET3_MB6HC) && HAS_MASS_STORAGE
+#if (defined(DUET3_MB6HC) || defined(XBOARD_V1) || defined(XBOARD_V3) && HAS_MASS_STORAGE)
 # if SUPPORT_LED_STRIPS
 		reply.copy("exactly one of DEFHJPSR must be given");
 # else

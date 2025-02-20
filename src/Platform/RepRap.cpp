@@ -346,6 +346,9 @@ constexpr ObjectModelTableEntry RepRap::objectModelTable[] =
 #endif
 	{ "logLevel",				OBJECT_MODEL_FUNC(self->platform->GetLogLevel()),						ObjectModelEntryFlags::none },
 	{ "machineMode",			OBJECT_MODEL_FUNC(self->gCodes->GetMachineModeString()),				ObjectModelEntryFlags::none },
+#if SUPPORT_MACHINE_VERSION
+	{ "machineVersion",			OBJECT_MODEL_FUNC((int32_t)self->gCodes->GetMachineVersion()),			ObjectModelEntryFlags::none },
+#endif
 	{ "macroRestarted",			OBJECT_MODEL_FUNC(self->gCodes->GetMacroRestarted()),					ObjectModelEntryFlags::none },
 	{ "messageBox",				OBJECT_MODEL_FUNC_IF_NOSELF(MessageBox::HaveCurrent(), MessageBox::GetCurrent(), 0), ObjectModelEntryFlags::important },
 	{ "msUpTime",				OBJECT_MODEL_FUNC_NOSELF((int32_t)(context.GetStartMillis() % 1000u)),	ObjectModelEntryFlags::live },
@@ -365,6 +368,7 @@ constexpr ObjectModelTableEntry RepRap::objectModelTable[] =
 #endif
 	{ "thisInput",				OBJECT_MODEL_FUNC_IF_NOSELF(context.GetGCodeBuffer() != nullptr, (int32_t)context.GetGCodeBuffer()->GetChannel().ToBaseType()),	ObjectModelEntryFlags::verbose },
 	{ "time",					OBJECT_MODEL_FUNC(DateTime(self->platform->GetDateTime())),				ObjectModelEntryFlags::live },
+	{ "timeWithMs",				OBJECT_MODEL_FUNC(self->platform->GetDateTimeAsString()),				ObjectModelEntryFlags::live },
 	{ "upTime",					OBJECT_MODEL_FUNC_NOSELF((int32_t)((context.GetStartMillis()/1000u) & 0x7FFFFFFF)),	ObjectModelEntryFlags::live },
 
 	// 4. state.beep
@@ -421,7 +425,7 @@ constexpr uint8_t RepRap::objectModelTableDescriptor[] =
 	0,																						// directories
 #endif
 	26 + SUPPORT_LED_STRIPS,																// limits
-	22 + HAS_VOLTAGE_MONITOR + SUPPORT_LASER,												// state
+	23 + HAS_VOLTAGE_MONITOR + SUPPORT_LASER + SUPPORT_MACHINE_VERSION,						// state
 	2,																						// state.beep
 	12 + (unsigned int)HAS_NETWORKING + (2 * HAS_MASS_STORAGE) + ((unsigned int)HAS_MASS_STORAGE | (unsigned int)HAS_EMBEDDED_FILES | (unsigned int)HAS_SBC_INTERFACE) + SUPPORT_LED_STRIPS,	// seqs
 	3																						// state.configErr

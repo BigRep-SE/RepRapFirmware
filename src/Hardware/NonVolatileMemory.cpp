@@ -24,15 +24,25 @@ void NonVolatileMemory::EnsureRead() noexcept
 #if SAME5x
 		memcpyu32(reinterpret_cast<uint32_t*>(&buffer), reinterpret_cast<const uint32_t *>(SEEPROM_ADDR), sizeof(buffer)/sizeof(uint32_t));
 #elif SAM4E || SAM4S || SAME70
-		Flash::ReadUserSignature(reinterpret_cast<uint32_t*>(&buffer), sizeof(buffer)/sizeof(uint32_t));
+		if(!Flash::ReadUserSignature(reinterpret_cast<uint32_t*>(&buffer), sizeof(buffer)/sizeof(uint32_t)))
+		{
+			// Let's try again
+			Flash::ReadUserSignature(reinterpret_cast<uint32_t*>(&buffer), sizeof(buffer)/sizeof(uint32_t));
+		}
 #else
 # error Unsupported processor
 #endif
 		if (buffer.magic != NVM::MagicValue)
 		{
 //			debugPrintf("Invalid user area\n");
+#if SUPPORT_MACHINE_VERSION
+			const uint16_t machineVersion = buffer.machineVersion;
+#endif
 			memset(&buffer, 0xFF, sizeof(buffer));
 			buffer.magic = NVM::MagicValue;
+#if SUPPORT_MACHINE_VERSION
+			buffer.machineVersion = machineVersion;
+#endif
 			state = NvmState::eraseAndWriteNeeded;
 		}
 		else
@@ -168,5 +178,31 @@ void NonVolatileMemory::SetThermistorCalibration(unsigned int inputNumber, int8_
 		}
 	}
 }
+
+#if SUPPORT_MACHINE_VERSION
+void NonVolatileMemory::SetMachineVersion(uint16_t version) noexcept{
+	EnsureRead();
+	const uint16_t oldVal = buffer.machineVersion;
+	const uint16_t newVal = version;
+	if (oldVal != newVal)
+	{
+		// If we are only changing 1 bits to 0 then we don't need to erase
+		buffer.machineVersion = newVal;
+		if ((newVal & ~oldVal) != 0)
+		{
+			state = NvmState::eraseAndWriteNeeded;
+		}
+		else if (state == NvmState::clean)
+		{
+			state = NvmState::writeNeeded;
+		}
+	}
+}
+uint16_t NonVolatileMemory::GetMachineVersion(){
+	EnsureRead();
+	return (buffer.machineVersion == 0xFFFF) ? 0 : buffer.machineVersion;
+}
+#endif
+
 
 // End

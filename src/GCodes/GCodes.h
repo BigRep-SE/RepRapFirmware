@@ -46,6 +46,10 @@ Licence: GPL
 # include <Storage/CRC32.h>
 #endif
 
+#if NETX_ENABLE
+# include "Hardware/NetX/NetXSerial.h"
+#endif
+
 const char feedrateLetter = 'F';						// GCode feedrate
 const char extrudeLetter = 'E'; 						// GCode extrude
 
@@ -176,6 +180,11 @@ public:
 	size_t GetNumExtruders() const noexcept { return numExtruders; }
 
 	const char *_ecv_array GetMachineModeString() const noexcept;				// Get the name of the current machine mode
+
+#if SUPPORT_MACHINE_VERSION
+	uint16_t GetMachineVersion() const noexcept;								// Get the machine type
+	void SetMachineVersion(const uint16_t machineVersion) noexcept;				// Set the machine version
+#endif
 
 	void HandleHeaterFault() noexcept;											// Respond to a heater fault
 

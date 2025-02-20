@@ -404,13 +404,21 @@ void ExpressionValue::ExtractRequestedPart(const StringRef& rslt) const noexcept
 	if (sVal != nullptr)
 	{
 		// Split the string into three field separate by vertical bar. These are board short name, firmware version, and firmware date.
+#ifdef DEBUG
+		reprap.GetPlatform().MessageF(GenericMessage, "From CAN: %s\n", sVal);
+#endif
 		const char * p = strchr(sVal, '|');
 		const size_t indexOfDivider1 = (p == nullptr) ? strlen(sVal) : p - sVal;
-		if (p != nullptr)
-		{
-			p = strchr(p + 1, '|');
-		}
-		const size_t indexOfDivider2 = (p == nullptr) ? strlen(sVal) : p - sVal;
+        if (p != nullptr)
+        {
+            p = strchr(p + 1, '|');
+        }
+        const size_t indexOfDivider2 = (p == nullptr) ? strlen(sVal) : p - sVal;
+        if (p != nullptr)
+        {
+            p = strchr(p + 1, '|');
+        }
+        const size_t indexOfDivider3 = (p == nullptr) ? strlen(sVal) : p - sVal;
 
 		switch((ExpansionDetail)param)
 		{
@@ -437,8 +445,14 @@ void ExpressionValue::ExtractRequestedPart(const StringRef& rslt) const noexcept
 
 		case ExpansionDetail::firmwareDate:
 			if (strlen(sVal) > indexOfDivider2)
+            {
+                rslt.catn(sVal + indexOfDivider2 + 1, indexOfDivider3 - indexOfDivider2 - 1);
+            }
+			break;
+		case ExpansionDetail::bootloaderVersion:
+			if (strlen(sVal) > indexOfDivider3)
 			{
-				rslt.cat(sVal + indexOfDivider2 + 1);
+				rslt.cat(sVal + indexOfDivider3 + 1);
 			}
 			break;
 

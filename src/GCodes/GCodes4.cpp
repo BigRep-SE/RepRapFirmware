@@ -538,7 +538,9 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply) noexcept
 		if (LockAllMovementSystemsAndWaitForStandstill(gb))
 		{
 			gb.AdvanceState();
+#if !CUSTOMIZED_RESURRECT
 			if (AllAxesAreHomed())
+#endif
 			{
 				DoFileMacro(gb, PAUSE_G, true, SystemHelperMacroCode);
 			}
@@ -549,7 +551,9 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply) noexcept
 		if (LockAllMovementSystemsAndWaitForStandstill(gb))
 		{
 			gb.AdvanceState();
+#if !CUSTOMIZED_RESURRECT
 			if (AllAxesAreHomed())
+#endif
 			{
 				if (!DoFileMacro(gb, FILAMENT_CHANGE_G, false, SystemHelperMacroCode))
 				{
@@ -649,6 +653,9 @@ void GCodes::RunStateMachine(GCodeBuffer& gb, const StringRef& reply) noexcept
 			{
 				if (   ms.currentUserPosition[axis] != ms.GetPauseRestorePoint().moveCoords[axis]
 					&& (restoreZ || axis != Z_AXIS)
+#if CUSTOMIZED_RESURRECT
+					&& (axis <= Z_AXIS)
+#endif
 				   )
 				{
 					ms.currentUserPosition[axis] = ms.GetPauseRestorePoint().moveCoords[axis];

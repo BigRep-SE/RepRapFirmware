@@ -232,6 +232,9 @@ constexpr ObjectModelTableEntry Move::objectModelTable[] =
 	{ "backlash",			OBJECT_MODEL_FUNC(self->backlashMm[context.GetLastIndex()], 3),													ObjectModelEntryFlags::none },
 	{ "current",			OBJECT_MODEL_FUNC((int32_t)(self->GetMotorCurrent(context.GetLastIndex(), 906))),								ObjectModelEntryFlags::none },
 	{ "drivers",			OBJECT_MODEL_FUNC_ARRAY(3),																						ObjectModelEntryFlags::none },
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	{ "endstops",			OBJECT_MODEL_FUNC_NOSELF(reprap.GetPlatform().GetEndstops().GetAxisMapped(context.GetLastIndex()), 1),								ObjectModelEntryFlags::none },
+#endif
 	{ "homed",				OBJECT_MODEL_FUNC_NOSELF(reprap.GetGCodes().IsAxisHomed(context.GetLastIndex())),								ObjectModelEntryFlags::none },
 	{ "jerk",				OBJECT_MODEL_FUNC(InverseConvertSpeedToMmPerMin(self->GetMaxInstantDv(context.GetLastIndex())), 1),				ObjectModelEntryFlags::none },
 	{ "letter",				OBJECT_MODEL_FUNC_NOSELF(reprap.GetGCodes().GetAxisLetters()[context.GetLastIndex()]),							ObjectModelEntryFlags::none },
@@ -310,10 +313,10 @@ constexpr uint8_t Move::objectModelTableDescriptor[] =
 	2,
 	4,
 #ifdef DUET_NG	// Duet WiFi/Ethernet doesn't have settable standstill current
-	22,																		// section 9: move.axes[]
+	22 + SUPPORT_INDIVIDUAL_ENDSTOPS,																		// section 9: move.axes[]
 	16,																		// section 10: move.extruders[]
 #else
-	23,																		// section 9: move.axes[]
+	23 + SUPPORT_INDIVIDUAL_ENDSTOPS,																		// section 9: move.axes[]
 	17,																		// section 10: move.extruders[]
 #endif
 	3,																		// section 11: move.extruders[].nonlinear
@@ -519,7 +522,9 @@ void Move::Init() noexcept
 #if HAS_SMART_DRIVERS
 	// Initialise TMC driver module
 # if SUPPORT_TMC51xx
+#if !defined(XBOARD_V2) && !defined(XBOARD_V3)
 	SmartDrivers::Init();
+#endif
 # elif SUPPORT_TMC22xx
 #  if TMC22xx_VARIABLE_NUM_DRIVERS
 	SmartDrivers::Init(numSmartDrivers);

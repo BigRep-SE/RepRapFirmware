@@ -436,6 +436,41 @@ bool GCodeBuffer::IsLaterThan(const GCodeBuffer& other) const noexcept
 	return oursIsLater;
 }
 
+// Determine whether this input channel is at a strictly later point than the other one
+bool GCodeBuffer::IsLaterOrEqualThan(const GCodeBuffer& other) const noexcept
+{
+	unsigned int ourDepth = GetStackDepth();
+	unsigned int otherDepth = other.GetStackDepth();
+	const GCodeMachineState *ourState = machineState;
+	const GCodeMachineState *otherState = other.machineState;
+	while (ourDepth > otherDepth)
+	{
+		ourState = ourState->GetPrevious();
+		--ourDepth;
+	}
+	while (otherDepth > ourDepth)
+	{
+		otherState = otherState->GetPrevious();
+		--otherDepth;
+	}
+
+	bool oursIsLater = false;
+	while (ourState != nullptr)
+	{
+		if (ourState->lineNumber >= otherState->lineNumber)
+		{
+			oursIsLater = true;
+		}
+		else if (ourState->lineNumber < otherState->lineNumber)
+		{
+			oursIsLater = false;
+		}
+		otherState = otherState->GetPrevious();
+		ourState = ourState->GetPrevious();
+	}
+
+	return oursIsLater;
+}
 #endif
 
 // Return true if the command we have just completed was the last command in the line of GCode.

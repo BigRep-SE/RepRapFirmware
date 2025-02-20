@@ -9,10 +9,15 @@
 #define SRC_HARDWARE_SAME70_DEVICES_H_
 
 #include <AsyncSerial.h>
+#include <AsyncSerial485.h>
 #include <USARTClass.h>
 
 extern AsyncSerial serialUart1;
+#if !defined(XBOARD_V2) && !defined(XBOARD_V3)
 extern USARTClass serialUart2;
+#else
+extern AsyncSerial485 serialUart2;
+#endif
 
 #if defined(DUET3_MB6HC)
 extern AsyncSerial serialWiFi;

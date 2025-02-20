@@ -154,6 +154,7 @@ void *Tasks::GetNVMBuffer(const uint32_t *_ecv_array _ecv_null stk) noexcept
 #endif
 
 #if !defined(DEBUG)		// don't check the CRC of a debug build because debugger breakpoints mess up the CRC
+#if 0
 	// Check the integrity of the firmware by checking the firmware CRC
 	// If we have embedded files then the CRC is stored after those files, so we need to fetch the CRC address form the vector table
 	{
@@ -180,6 +181,7 @@ void *Tasks::GetNVMBuffer(const uint32_t *_ecv_array _ecv_null stk) noexcept
 			}
 		}
 	}
+#endif
 #endif	// !defined(DEBUG)
 
 	// Fill the free memory with a pattern so that we can check for stack usage and memory corruption

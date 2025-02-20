@@ -12,7 +12,7 @@
 
 #if SUPPORT_LED_STRIPS
 
-#if defined(DUET3_MB6HC) || defined(DUET3_MB6XD)
+#if defined(DUET3_MB6HC) || defined(DUET3_MB6XD) || defined(XBOARD_V1) || defined(XBOARD_V3)
 constexpr size_t DmaBufferSize = 240 * 16;						// DotStar LEDs use 4 bytes/LED, NeoPixel RGBW use 16 bytes/LED
 #endif
 

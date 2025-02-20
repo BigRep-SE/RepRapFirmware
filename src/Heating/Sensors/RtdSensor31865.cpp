@@ -10,7 +10,6 @@
 #if SUPPORT_SPI_SENSORS
 
 #include <Platform/RepRap.h>
-#include <Platform/Platform.h>
 #include <GCodes/GCodeBuffer/GCodeBuffer.h>
 
 #if SUPPORT_REMOTE_COMMANDS
@@ -30,6 +29,16 @@ const uint32_t MinimumReadInterval = 100;		// minimum interval between reads, in
 
 // Default configuration register
 // Note that to get the MAX31865 to do continuous conversions, we need to set the bias bit as well as the continuous-conversion bit
+#if SUPPORT_3WIRES_RTD
+//  Vbias=1
+//  Conversion mode=1
+//	1shot = 0
+//	3wire=1
+//	Fault detection=00 no action
+//	Fault status=1 clear any existing fault
+//	50/60Hz reject=1 for 50Hz (0 for 60Hz)
+const uint8_t DefaultCr0 = 0b11010011;
+#else
 //  Vbias=1
 //  Conversion mode=1
 //	1shot = 0
@@ -38,6 +47,7 @@ const uint32_t MinimumReadInterval = 100;		// minimum interval between reads, in
 //	Fault status=1 clear any existing fault
 //	50/60Hz reject=1 for 50Hz (0 for 60Hz)
 const uint8_t DefaultCr0 = 0b11000011;
+#endif
 const uint8_t Cr0ReadMask = 0b11011101;		// bits 1 and 5 auto clear, so ignore the value read
 
 const uint32_t DefaultRef = 400;
@@ -62,6 +72,14 @@ RtdSensor31865::RtdSensor31865(unsigned int sensorNum) noexcept
 	: SpiTemperatureSensor(sensorNum, "PT100 (MAX31865)", MAX31865_SpiMode, MAX31865_Frequency),
 	  rrefTimes100(DefaultRef * 100), cr0(DefaultCr0)
 {
+	sum = 0;
+	index = 0;
+	windowSize = 0;
+	reqWindowSize = 0;
+	for (size_t i = 0; i < Pt100MaxAverageReadings; ++i)
+	{
+		readings[i] = 0;
+	}
 }
 
 // Configure this temperature sensor
@@ -102,6 +120,11 @@ GCodeResult RtdSensor31865::Configure(GCodeBuffer& gb, const StringRef& reply, b
 	{
 		changed = true;
 		rrefTimes100 = lrintf(gb.GetPositiveFValue() * 100);
+	}
+
+	if (gb.Seen('K'))
+	{
+		reqWindowSize = GetSamplesFromSeconds(gb.GetLimitedUIValue('K', GetSecondsFromSamples(Pt100MaxAverageReadings)+1));
 	}
 
 	return FinishConfiguring(changed, reply);
@@ -152,6 +175,13 @@ GCodeResult RtdSensor31865::Configure(const CanMessageGenericParser& parser, con
 		rrefTimes100 = lrintf(paramR * 100);
 	}
 
+	uint32_t paramK;
+	if (parser.GetUintParam('K', paramK))
+	{
+		paramK = GetSamplesFromSeconds(paramK);
+		reqWindowSize = (paramK > Pt100MaxAverageReadings) ? Pt100MaxAverageReadings : paramK;
+	}
+
 	return FinishConfiguring(seen, reply);
 }
 
@@ -186,6 +216,14 @@ GCodeResult RtdSensor31865::FinishConfiguring(bool changed, const StringRef& rep
 	{
 		CopyBasicDetails(reply);
 		reply.catf(", %s wires, reject %dHz, reference resistor %.2f ohms", ((cr0 & 0x10u) != 0) ? "3" : "2/4", ((cr0 & 0x01u) != 0) ? 50 : 60, (double)((float)rrefTimes100 * 0.01));
+		if (reqWindowSize > 0)
+		{
+			reply.catf(", moving average filter: %lu sec", GetSecondsFromSamples(reqWindowSize));
+		}
+		else
+		{
+			reply.catf(", moving average filter: disabled");
+		}
 	}
 	return GCodeResult::ok;
 }
@@ -211,6 +249,65 @@ TemperatureError RtdSensor31865::TryInitRtd() const noexcept
 	}
 
 	return sts;
+}
+
+uint32_t RtdSensor31865::GetSamplesFromSeconds(uint32_t s) const noexcept
+{
+    return (s*1000)/HeatSampleIntervalMillis;
+}
+
+uint32_t RtdSensor31865::GetSecondsFromSamples(uint32_t s) const noexcept
+{
+    return (s*HeatSampleIntervalMillis)/1000;
+}
+
+// Call this to put a new reading into the filter and update the sum
+uint16_t RtdSensor31865::UpdateFilter(uint16_t r, uint16_t w) noexcept
+{
+	size_t head = index;		// Avoid reloading volatile variable
+
+	// Filter is disabled
+	if (w == 0)
+	{
+		if (windowSize != 0)	// Reset filter only if before was activated
+		{
+			sum = 0;
+			index = 0;
+			windowSize = 0;
+			for (size_t i = 0; i < Pt100MaxAverageReadings; ++i)
+			{
+				readings[i] = 0;
+			}
+		}
+		return r;
+    }
+
+	// Reducing window
+    if (w <= windowSize)
+    {
+    	size_t lastWindowElementIndex = head + (Pt100MaxAverageReadings - windowSize);
+    	size_t diffWindow = windowSize - w;
+        windowSize = w;
+        // Remove from the sum the oldest values of the window up to the new size (or just the oldest one if the size doesn't change)
+        for (size_t i = 0; i <= diffWindow; ++i)
+        {
+            sum -= readings[(lastWindowElementIndex + i) % Pt100MaxAverageReadings];
+        }
+    }
+
+	// Increasing window
+	if (windowSize < w)
+	{
+		windowSize++;
+	}
+
+	// Insert the new value, update sum and move index
+	readings[head] = r;
+	sum += r;
+	index = (head + 1) % Pt100MaxAverageReadings;
+
+	// Compute and return the average when buffer is full
+	return (windowSize == w) ? (sum / w) : r;
 }
 
 void RtdSensor31865::Poll() noexcept
@@ -246,7 +343,8 @@ void RtdSensor31865::Poll() noexcept
 		}
 		else
 		{
-			const uint16_t ohmsx100 = (uint16_t)((((rawVal >> 1) & 0x7FFF) * rrefTimes100) >> 15);
+			uint16_t ohmsx100 = (uint16_t)((((rawVal >> 1) & 0x7FFF) * rrefTimes100) >> 15);
+			ohmsx100 = UpdateFilter(ohmsx100, reqWindowSize);
 			float t;
 			sts = GetPT100Temperature(t, ohmsx100);
 			SetResult(t, sts);

@@ -14,6 +14,10 @@
 class WiFiSocket;
 class W5500Socket;
 class RTOSPlusTCPEthernetSocket;
+#if NETX_ENABLE
+class NetXSocket;
+#endif
+
 
 // Network buffer class. These buffers are 2K long so that they can accept as much data as the W5500 can provide in one go.
 class NetworkBuffer final
@@ -22,6 +26,9 @@ public:
 	friend class WiFiSocket;
 	friend class W5500Socket;
 	friend class RTOSPlusTCPEthernetSocket;
+#if NETX_ENABLE
+	friend class NetXSocket;
+#endif
 
 	// Release this buffer and return the next one in the chain
 	NetworkBuffer *_ecv_null Release() noexcept;

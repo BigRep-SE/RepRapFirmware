@@ -65,6 +65,10 @@ constexpr float DefaultFilamentDiameter = 1.75;			// the default filament diamet
 constexpr unsigned int MaxTools = 50;					// this limit is to stop the serialised object model getting too large
 constexpr unsigned int MinVisibleAxes = 2;				// the minimum number of axes that we allow to be visible
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+constexpr size_t MaxEndstopsPerAxes = 8;				// Max Amount of endstops per axes
+#endif
+
 constexpr unsigned int DefaultBacklashCorrectionDistanceFactor = 10;	// backlash correction is spread over (backlash amount * this) mm
 
 // Timeouts
@@ -232,8 +236,8 @@ constexpr size_t NumVisibleRestorePoints = 6;					// Number of restore points, m
 constexpr float AxisRoundingError = 0.02;				// Maximum possible error when we round trip a machine position to motor coordinates and back
 
 // Default nozzle and filament values
-constexpr float NOZZLE_DIAMETER = 0.5;					// Millimetres
-constexpr float FILAMENT_WIDTH = 1.75;					// Millimetres
+constexpr float NOZZLE_DIAMETER = 0.6;					// Millimetres
+constexpr float FILAMENT_WIDTH = 2.85;					// Millimetres
 
 constexpr unsigned int MaxStackDepth = 10;				// Maximum depth of stack (was 5 in 3.01-RC2, increased to 7 for 3.01-RC3, 10 for 3.4.0beta6)
 

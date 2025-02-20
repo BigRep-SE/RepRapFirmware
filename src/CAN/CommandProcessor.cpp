@@ -485,6 +485,7 @@ void CommandProcessor::ProcessReceivedMessage(CanMessageBuffer *buf) noexcept
 				break;
 
 			// LED strip commands
+#if SUPPORT_LED_STRIPS
 			case CanMessageType::m950Led:
 				requestId = buf->msg.generic.requestId;
 				rslt = reprap.GetPlatform().GetLedStripManager().HandleM950Led(buf->msg.generic, replyRef, extra);
@@ -494,7 +495,7 @@ void CommandProcessor::ProcessReceivedMessage(CanMessageBuffer *buf) noexcept
 				requestId = buf->msg.generic.requestId;
 				rslt = reprap.GetPlatform().GetLedStripManager().HandleLedSetColours(buf->msg.generic, replyRef);
 				break;
-
+#endif
 			// Driver commands
 			case CanMessageType::setMotorCurrents:
 				requestId = buf->msg.multipleDrivesRequestFloat.requestId;

@@ -17,7 +17,11 @@
 # undef USB
 #endif
 
+#if NETX_ENABLE
+NamedEnum(GCodeChannel, uint8_t, HTTP, Telnet, File, USB, Aux, Trigger, Queue, LCD, SBC, Daemon, Aux2, NetX, Autopause, File2, Queue2);
+#else
 NamedEnum(GCodeChannel, uint8_t, HTTP, Telnet, File, USB, Aux, Trigger, Queue, LCD, SBC, Daemon, Aux2, Autopause, File2, Queue2);
+#endif
 
 constexpr size_t NumGCodeChannels = GCodeChannel::NumValues;
 

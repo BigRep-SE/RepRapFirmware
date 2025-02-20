@@ -15,6 +15,8 @@
 #include <Platform/Event.h>
 #include <Tools/Tool.h>
 
+#include "Sensors/EmulatedSensor.h"
+
 #if SUPPORT_REMOTE_COMMANDS
 
 # include <CAN/CanInterface.h>
@@ -75,6 +77,17 @@ float LocalHeater::GetAccumulator() const noexcept
 
 inline void LocalHeater::SetHeater(float power) const noexcept
 {
+	{
+		auto ts = reprap.GetHeat().FindSensor(GetSensorNumber());
+		if (ts.IsNotNull())
+		{
+			if(ReducedStringEquals(ts->GetShortSensorType(),EmulatedSensor::TypeName))
+			{
+				static_cast<EmulatedSensor*>(ts.Ptr())->SetCurrentPwm(power);
+			}
+			ts.Release();
+		}
+	}
 	for (auto& port : ports)
 	{
 		port.WriteAnalog(power);

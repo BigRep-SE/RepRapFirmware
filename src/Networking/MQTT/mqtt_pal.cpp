@@ -8,7 +8,7 @@
 #include <RTOSIface/RTOSIface.h>
 #include <Socket.h>
 
-#include "mqtt.h"
+#include "Networking/MQTT/MQTT_C/include/mqtt.h"
 
 /*
  * MQTT-C PAL layer implementation

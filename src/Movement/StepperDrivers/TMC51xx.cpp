@@ -23,7 +23,7 @@
 # include <CAN/CanInterface.h>
 #endif
 
-#if defined(DUET3_MB6HC)
+#if defined(DUET3_MB6HC) || defined(XBOARD_V1) || defined(XBOARD_V3) 
 
 #include <Platform/RepRap.h>
 #include <Endstops/Endstop.h>

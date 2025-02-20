@@ -21,7 +21,10 @@
 #endif
 
 // Switch endstop
-SwitchEndstop::SwitchEndstop(uint8_t p_axis, EndStopPosition pos) noexcept : Endstop(p_axis, pos), numPortsUsed(0)
+SwitchEndstop::SwitchEndstop(uint8_t p_axis, EndStopPosition pos) noexcept : Endstop(p_axis, pos)
+#if !SUPPORT_INDIVIDUAL_ENDSTOPS
+	, numPortsUsed(0)
+#endif
 {
 	// ports will be initialised automatically by the IoPort default constructor
 }
@@ -60,10 +63,18 @@ GCodeResult SwitchEndstop::Configure(GCodeBuffer& gb, const StringRef& reply) TH
 {
 	String<MaxMultiplePinNamesLength> portNames;
 	gb.GetReducedString(portNames.GetRef());
+	uint16_t threshold = 0;
+#if SUPPORT_ANALOG_THRESHOLD
+	if (gb.Seen('T')){
+		threshold = gb.GetUIValue();
+	}
+	return Configure(portNames.c_str(), reply, threshold);
+#else
 	return Configure(portNames.c_str(), reply);
+#endif
 }
 
-GCodeResult SwitchEndstop::Configure(const char *_ecv_array pinNames, const StringRef& reply) noexcept
+GCodeResult SwitchEndstop::Configure(const char *_ecv_array pinNames, const StringRef& reply, uint16_t threshold) noexcept
 {
 	ReleasePorts();
 
@@ -86,7 +97,7 @@ GCodeResult SwitchEndstop::Configure(const char *_ecv_array pinNames, const Stri
 		if (boardAddress != CanInterface::GetCanAddress())
 		{
 			RemoteInputHandle h(RemoteInputHandle::typeEndstop, GetAxis(), numPortsUsed);
-			const GCodeResult rslt = CanInterface::CreateHandle(boardAddress, h, pn.c_str(), 0, MinimumSwitchReportInterval, states[numPortsUsed], reply);
+			const GCodeResult rslt = CanInterface::CreateHandle(boardAddress, h, pn.c_str(), threshold, MinimumSwitchReportInterval, states[numPortsUsed], reply);
 			if (rslt != GCodeResult::ok)
 			{
 				ReleasePorts();
@@ -113,6 +124,18 @@ GCodeResult SwitchEndstop::Configure(const char *_ecv_array pinNames, const Stri
 	}
 	return GCodeResult::ok;
 }
+
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+bool SwitchEndstop::GetStatusOfIndividualPort(size_t idx) const
+{
+#if SUPPORT_CAN_EXPANSION
+	return (idx < numPortsUsed) ? states[idx] : false;
+#else
+	return true;
+#endif
+}
+#endif
+
 
 EndStopType SwitchEndstop::GetEndstopType() const noexcept
 {

@@ -28,6 +28,11 @@ public:
 	void SetThermistorLowCalibration(unsigned int inputNumber, int8_t val) noexcept;
 	void SetThermistorHighCalibration(unsigned int inputNumber, int8_t val) noexcept;
 
+#if SUPPORT_MACHINE_VERSION
+	void SetMachineVersion(uint16_t version) noexcept;
+	uint16_t GetMachineVersion();
+#endif
+
 	static constexpr unsigned int NumberOfResetDataSlots = 3;
 	static constexpr unsigned int MaxCalibratedThermistors = 8;
 
@@ -39,9 +44,12 @@ private:
 	struct NVM
 	{
 		uint16_t magic;
+#if SUPPORT_MACHINE_VERSION
+		uint16_t machineVersion;
+#endif
 		uint8_t thermistorLowCalibration[MaxCalibratedThermistors];
 		uint8_t thermistorHighCalibration[MaxCalibratedThermistors];
-		uint8_t spare[38];
+		uint8_t spare[38-2*SUPPORT_MACHINE_VERSION];
 		// 56 bytes up to here
 		SoftwareResetData resetData[NumberOfResetDataSlots];			// 3 slots of 152 bytes each
 

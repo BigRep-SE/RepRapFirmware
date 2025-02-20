@@ -95,7 +95,7 @@ Network::Network(Platform& p) noexcept : platform(p)
 #endif
 {
 #if HAS_NETWORKING
-# if defined(DUET3_MB6HC) || defined(DUET3_MB6XD)
+# if defined(DUET3_MB6HC) || defined(DUET3_MB6XD) || defined(XBOARD_V1) || defined(XBOARD_V3)
 	interfaces[0] = new LwipEthernetInterface(p);
 # elif defined(DUET_NG) || defined(DUET3MINI_V04)
 	interfaces[0] = nullptr;			// we set this up in Init()
@@ -106,7 +106,7 @@ Network::Network(Platform& p) noexcept : platform(p)
 # else
 #  error Unknown board
 # endif
-# if defined(DUET3_MB6HC)
+# if defined(DUET3_MB6HC) && HAS_WIFI_NETWORKING
 	interfaces[1] = nullptr;			// no WiFi interface yet
 # endif
 #endif // HAS_NETWORKING
@@ -219,6 +219,7 @@ void Network::Init() noexcept
 // Create the additional interface. Called after we have established that we are not running in SBC mode but before config.g is run.
 void Network::CreateAdditionalInterface() noexcept
 {
+#if HAS_WIFI_NETWORKING
 	if (platform.GetBoardType() >= BoardType::Duet3_6HC_v102)
 	{
 		interfaces[1] = new WiFiInterface(platform);
@@ -226,6 +227,7 @@ void Network::CreateAdditionalInterface() noexcept
 		interfaces[1]->Init();
 		interfaces[1]->UpdateHostname(hostname);
 	}
+#endif
 }
 
 #endif

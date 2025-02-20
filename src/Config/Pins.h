@@ -8,10 +8,16 @@
 #  define PLATFORM DuetNG
 # elif defined(__SAME70Q20B__) || defined(__SAME70Q21B__) || defined(__SAMV71Q20B__)
 #  if defined(DUET3_MB6HC)
-#   define PLATFORM Duet3_MB6HC
+#   define PLATFORM 	Duet3_MB6HC
 #   define DUET3		1
 #  elif defined(DUET3_MB6XD)
-#   define PLATFORM Duet3_MB6XD
+#   define PLATFORM 	Duet3_MB6XD
+#   define DUET3		1
+#  elif defined(XBOARD_V1)
+#   define PLATFORM 	CB_MA_01
+#   define DUET3		1
+#  elif defined(XBOARD_V3)
+#   define PLATFORM 	CB_MA_03
 #   define DUET3		1
 #  else
 #   error Unknown platform
@@ -46,6 +52,14 @@
 
 #ifndef SUPPORT_COORDINATE_ROTATION
 # define SUPPORT_COORDINATE_ROTATION	1
+#endif
+
+#ifndef SUPPORT_ANALOG_THRESHOLD
+# define SUPPORT_ANALOG_THRESHOLD 0
+#endif
+
+#ifndef SUPPORT_MACHINE_VERSION
+# define SUPPORT_MACHINE_VERSION 0
 #endif
 
 #ifndef SUPPORT_LASER
@@ -136,6 +150,14 @@
 
 #ifndef DUAL_CAN
 # define DUAL_CAN				0
+#endif
+
+#ifndef DUAL_CAN_FD
+# define DUAL_CAN_FD			0
+#endif
+
+#ifndef CUSTOMIZED_RESURRECT
+#define CUSTOMIZED_RESURRECT	0
 #endif
 
 #ifndef SUPPORT_OBJECT_MODEL
@@ -295,6 +317,34 @@
 #ifndef SUPPORT_HANGPRINTER
 # define SUPPORT_HANGPRINTER	1
 #endif
+
+#ifndef NETX_ENABLE
+#define NETX_ENABLE							0
+#endif
+
+#ifndef HAS_ETHERCAT_MONITOR
+#define HAS_ETHERCAT_MONITOR				0
+#endif
+
+#ifndef HAS_CAN_BUS_BUSY_SENSOR
+#define HAS_CAN_BUS_BUSY_SENSOR				0
+#elif !defined(NO_CAN_FD)
+#undef HAS_CAN_BUS_BUSY_SENSOR
+#define HAS_CAN_BUS_BUSY_SENSOR				0
+#endif
+
+#ifndef SUPPORT_POWERMETER
+#define SUPPORT_POWERMETER					0
+#endif
+
+#ifndef SUPPORT_EMUPOWERMETER
+#define SUPPORT_EMUPOWERMETER				0
+#endif
+
+#ifndef SUPPORT_INDIVIDUAL_ENDSTOPS
+#define SUPPORT_INDIVIDUAL_ENDSTOPS			0	// The object model will not report the endstops individually.
+#endif
+
 
 #ifndef BOARD_USES_UF2_BINARY
 # define BOARD_USES_UF2_BINARY	0

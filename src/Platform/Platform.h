@@ -99,6 +99,10 @@ constexpr unsigned int ThermistorAverageReadings = 16;
 constexpr unsigned int TempSenseAverageReadings = 16;
 #endif
 
+#if SAME70 && SUPPORT_SPI_SENSORS
+constexpr unsigned int Pt100MaxAverageReadings = 10000/HeatSampleIntervalMillis;	// Time window for the moving average filter, max 10 seconds to avoid loss of information and time delay
+#endif
+
 constexpr uint32_t maxPidSpinDelay = 5000;			// Maximum elapsed time in milliseconds between successive temp samples by Pid::Spin() permitted for a temp sensor
 
 /****************************************************************************************************/
@@ -133,6 +137,12 @@ enum class BoardType : uint8_t
 	DuetM_10 = 1,
 #elif defined(PCCB_10)
 	PCCB_v10 = 1
+#elif defined(XBOARD_V1)
+	XBOARD_MA_01 = 1
+#elif defined(XBOARD_V2)
+	XBOARD_MA_02 = 1
+#elif defined(XBOARD_V3)
+	XBOARD_MA_03 = 1
 #else
 # error Unknown board
 #endif
@@ -259,6 +269,7 @@ public:
 	// Real-time clock
 	bool IsDateTimeSet() const noexcept { return realTime != 0; }	// Has the RTC been set yet?
 	time_t GetDateTime() const noexcept { return realTime; }		// Retrieves the current RTC datetime
+	const char* GetDateTimeAsString() const noexcept ;	// Retrieves the current RTC datetime as String with millisecs
 	bool GetDateTime(tm& rslt) const noexcept { return gmtime_r(&realTime, &rslt) != nullptr && realTime != 0; }
 																	// Retrieves the broken-down current RTC datetime and returns true if it's valid
 	bool SetDateTime(time_t t) noexcept;							// Sets the current RTC date and time or returns false on error
@@ -332,6 +343,9 @@ public:
 
 	// Endstops and Z probe
 	EndstopsManager& GetEndstops() noexcept { return endstops; }
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	const EndstopsManager& GetEndstops() const noexcept { return endstops; }
+#endif
 	ReadLockedPointer<ZProbe> GetZProbeOrDefault(size_t probeNumber) noexcept { return endstops.GetZProbeOrDefault(probeNumber); }
 	void InitZProbeFilters() noexcept;
 	const volatile ZProbeAveragingFilter& GetZProbeOnFilter() const noexcept { return zProbeOnFilter; }

@@ -22,19 +22,36 @@ LocalDriversBitmap EndstopOrZProbe::stalledDrivers;			// used to track which dri
 #define OBJECT_MODEL_FUNC(...) OBJECT_MODEL_FUNC_BODY(Endstop, __VA_ARGS__)
 #define OBJECT_MODEL_FUNC_IF(_condition,...) OBJECT_MODEL_FUNC_IF_BODY(Endstop, _condition,__VA_ARGS__)
 
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+constexpr ObjectModelArrayTableEntry Endstop::objectModelArrayTable[] =
+{
+	{
+		nullptr,					// no lock needed
+		[] (const ObjectModel *self, const ObjectExplorationContext&) noexcept -> size_t { return ((Endstop*)self)->GetNumberOfIndividualPorts(); },
+		[] (const ObjectModel *self, ObjectExplorationContext& context) noexcept -> ExpressionValue { return ExpressionValue(((Endstop*)self)->GetStatusOfIndividualPort(context.GetLastIndex())); }
+	}
+};
+
+DEFINE_GET_OBJECT_MODEL_ARRAY_TABLE(Endstop)
+#endif
+
 constexpr ObjectModelTableEntry Endstop::objectModelTable[] =
 {
 	// Within each group, these entries must be in alphabetical order
 	// 0. Endstop members
 	{ "highEnd",	OBJECT_MODEL_FUNC(self->GetAtHighEnd()),		 							ObjectModelEntryFlags::none },
+#if SUPPORT_INDIVIDUAL_ENDSTOPS
+	{ "individuallyTriggered",	OBJECT_MODEL_FUNC_ARRAY(0),										ObjectModelEntryFlags::live },
+#endif
 	{ "probe",		OBJECT_MODEL_FUNC_IF(self->IsZProbe(), (int32_t)self->GetZProbeNumber()),	ObjectModelEntryFlags::none },
 	{ "triggered",	OBJECT_MODEL_FUNC(self->Stopped()),		 									ObjectModelEntryFlags::live },
 	{ "type",		OBJECT_MODEL_FUNC(self->GetEndstopType().ToString()), 						ObjectModelEntryFlags::none },
 };
 
-constexpr uint8_t Endstop::objectModelTableDescriptor[] = { 1, 4 };
+constexpr uint8_t Endstop::objectModelTableDescriptor[] = { 1, 4 + SUPPORT_INDIVIDUAL_ENDSTOPS };
 
 DEFINE_GET_OBJECT_MODEL_TABLE(Endstop)
+
 
 #endif
 

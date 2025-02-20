@@ -47,6 +47,7 @@ constexpr ObjectModelTableEntry ExpansionManager::objectModelTable[] =
 {
 	// 0. boards[] members
 	{ "accelerometer",		OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasAccelerometer, self, 4),					ObjectModelEntryFlags::none },
+	{ "bootloaderVersion",	OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).typeName, ExpansionDetail::bootloaderVersion),	ObjectModelEntryFlags::none },
 	{ "canAddress",			OBJECT_MODEL_FUNC((int32_t)(&(self->FindIndexedBoard(context.GetLastIndex())) - self->boards)),					ObjectModelEntryFlags::none },
 	{ "closedLoop",			OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasClosedLoop, self, 5),					ObjectModelEntryFlags::none },
 	{ "drivers",			OBJECT_MODEL_FUNC_ARRAY_IF(self->FindIndexedBoard(context.GetLastIndex()).HasDrivers(), 0),						ObjectModelEntryFlags::liveNotPanelDue },
@@ -65,8 +66,9 @@ constexpr ObjectModelTableEntry ExpansionManager::objectModelTable[] =
 	{ "state",				OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).state.ToString()),								ObjectModelEntryFlags::none },
 	{ "uniqueId",			OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).uniqueId.IsValid(),
 													self->FindIndexedBoard(context.GetLastIndex()).uniqueId),								ObjectModelEntryFlags::none },
-	{ "v12",				OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasV12, self, 3),							ObjectModelEntryFlags::liveNotPanelDue },
-	{ "vIn",				OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasVin, self, 2),							ObjectModelEntryFlags::liveNotPanelDue },
+	{ "v12",				OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasV12, self, 3),							ObjectModelEntryFlags::live },
+	{ "v48",				OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasV48, self, 4),							ObjectModelEntryFlags::live },
+	{ "vIn",				OBJECT_MODEL_FUNC_IF(self->FindIndexedBoard(context.GetLastIndex()).hasVin, self, 2),							ObjectModelEntryFlags::live },
 
 	// 1. mcuTemp members
 	{ "current",			OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).mcuTemp.current, 1),							ObjectModelEntryFlags::liveNotPanelDue },
@@ -83,28 +85,34 @@ constexpr ObjectModelTableEntry ExpansionManager::objectModelTable[] =
 	{ "max",				OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).v12.maximum, 1),								ObjectModelEntryFlags::none },
 	{ "min",				OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).v12.minimum, 1),								ObjectModelEntryFlags::none },
 
-	// 4. accelerometer members
+	// 4. v48 members
+	{ "current",			OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).v48.current, 1),								ObjectModelEntryFlags::live },
+	{ "max",				OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).v48.maximum, 1),								ObjectModelEntryFlags::none },
+	{ "min",				OBJECT_MODEL_FUNC(self->FindIndexedBoard(context.GetLastIndex()).v48.minimum, 1),								ObjectModelEntryFlags::none },
+
+	// 5. accelerometer members
 	{ "orientation",		OBJECT_MODEL_FUNC((int32_t)self->FindIndexedBoard(context.GetLastIndex()).accelerometerOrientation),			ObjectModelEntryFlags::none },
 	{ "points",				OBJECT_MODEL_FUNC((int32_t)self->FindIndexedBoard(context.GetLastIndex()).accelerometerLastRunDataPoints),		ObjectModelEntryFlags::none },
 	{ "runs",				OBJECT_MODEL_FUNC((int32_t)self->FindIndexedBoard(context.GetLastIndex()).accelerometerRuns),					ObjectModelEntryFlags::none },
 
-	// 5. closedLoop members
+	// 6. closedLoop members
 	{ "points",				OBJECT_MODEL_FUNC((int32_t)self->FindIndexedBoard(context.GetLastIndex()).closedLoopLastRunDataPoints),			ObjectModelEntryFlags::none },
 	{ "runs",				OBJECT_MODEL_FUNC((int32_t)self->FindIndexedBoard(context.GetLastIndex()).closedLoopRuns),						ObjectModelEntryFlags::none },
 
-	// 6. inductiveSensor members (none yet)
+	// 7. inductiveSensor members (none yet)
 };
 
 constexpr uint8_t ExpansionManager::objectModelTableDescriptor[] =
 {
-	7,				// number of sections
-	17,				// section 0: boards[]
+	8,				// number of sections
+	19,				// section 0: boards[]
 	3,				// section 1: mcuTemp
 	3,				// section 2: vIn
 	3,				// section 3: v12
-	3,				// section 4: accelerometer
-	2,				// section 5: closed loop
-	0,				// section 6: inductive sensor
+	3,				// section 4: v48
+	3,				// section 5: accelerometer
+	2,				// section 6: closed loop
+	0,				// section 7: inductive sensor
 };
 
 DEFINE_GET_OBJECT_MODEL_TABLE(ExpansionManager)
@@ -117,7 +125,7 @@ ExpansionBoardData::ExpansionBoardData() noexcept
 	  whenLastStatusReportReceived(0),
 	  driverData(nullptr),
 	  accelerometerRuns(0), closedLoopRuns(0),
-	  hasMcuTemp(false), hasVin(false), hasV12(false), hasAccelerometer(false),
+	  hasMcuTemp(false), hasVin(false), hasV12(false), hasV48(false), hasAccelerometer(false),
 	  state(BoardState::unknown), numDrivers(0)
 {
 }
@@ -268,6 +276,11 @@ void ExpansionManager::ProcessBoardStatusReport(const CanMessageBuffer *buf) noe
 	if (msg.hasV12)
 	{
 		board.v12 = msg.values[index++];
+	}
+	board.hasV48 = msg.hasV48;
+	if (msg.hasV48)
+	{
+		board.v48 = msg.values[index++];
 	}
 	board.hasMcuTemp = msg.hasMcuTemp;
 	if (msg.hasMcuTemp)

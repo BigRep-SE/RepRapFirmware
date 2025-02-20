@@ -1158,7 +1158,9 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply) THROWS(GCodeEx
 						{
 							pauseState = PauseState::resuming;
 							gb.SetState(GCodeState::resuming1);
-							if (AllAxesAreHomed() && (!gb.Seen('P') || gb.GetUIValue() != 0))		// P0 parameter skips running resume.g
+							// if (AllAxesAreHomed() && (!gb.Seen('P') || gb.GetUIValue() != 0))		// P0 parameter skips running resume.g
+							// We home or report error in the resume.g!
+							if ((!gb.Seen('P') || gb.GetUIValue() != 0))		// P0 parameter skips running resume.g
 							{
 								DoFileMacro(gb, RESUME_G, true, SystemHelperMacroCode);
 							}
@@ -4208,6 +4210,20 @@ bool GCodes::HandleMcode(GCodeBuffer& gb, const StringRef& reply) THROWS(GCodeEx
 					}
 				}
 				break;
+
+#if SUPPORT_MACHINE_VERSION
+			case 900:
+				if (gb.Seen('C'))
+				{
+					SetMachineVersion((uint16_t)gb.GetLimitedUIValue('C',0x10000));
+					result = GCodeResult::ok;
+				}
+				else{
+					result = GCodeResult::error;
+					reply.copy("Missing parameter C");
+				}
+				break;
+#endif
 
 			case 905: // Set current RTC date and time
 				result = SetDateTime(gb, reply);

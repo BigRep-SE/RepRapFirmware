@@ -29,7 +29,7 @@ struct ExpansionBoardData
 
 	const char *_ecv_array typeName;
 	int32_t neverUsedRam;
-	MinCurMax mcuTemp, vin, v12;
+	MinCurMax mcuTemp, vin, v12, v48;
 	uint32_t accelerometerLastRunDataPoints;
 	uint32_t closedLoopLastRunDataPoints;
 	volatile uint32_t whenLastStatusReportReceived;
@@ -40,11 +40,12 @@ struct ExpansionBoardData
 	uint16_t hasMcuTemp : 1,
 			 hasVin : 1,
 			 hasV12 : 1,
+			 hasV48 : 1,
 			 hasAccelerometer : 1,
 			 hasClosedLoop : 1,
 			 hasInductiveSensor : 1,
 			 usesUf2Binary : 1,
-			 spare : 9;
+			 spare : 8;
 	BoardState state;
 	uint8_t numDrivers;
 	uint8_t accelerometerOrientation = DefaultAccelerometerOrientation;
